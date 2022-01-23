@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+
+{% block content %}
+
+    <!-- Main Content -->
+
+    <section class="sample-text-area">
+
+      <div class="container">
+        {% for title,link,poster,desc,director,year in movies %}
+        
+            <div class="col-lg-10 col-md-10 col-sm-10 mx-auto">
+                <div class="row post-preview">
+                  <div class="col-lg-3 col-md-3 col-xs-3 d-flex justify-content-center img-fluid align-self-center">
+                    <a href="https://www.imdb.com/title/{{link}}/" target="_blank">
+                    <img class="f-img img-fluid" src="{{poster}}" style="height: 250px; object-fit: cover; object-position: center;">
+                  </a>
+                  </div>
+
+                  <div class="col-lg-9 col-md-9 col-xs-9">
+                    <h2 class="post-title">
+                      <a href="https://www.imdb.com/title/{{link}}/" target="_blank">{{title}}</a>
+                    </h2>
+                    <p>{{desc}}</p>
+                    <p class="post-meta">{{director}} on {{year}}</p>
+                  </div>
+                </div>
+            </div>
+            
+          {% endfor %}
+
+      </div>
+
+    </section>
+
+    <section class="sample-text-area">
+
+      <div class="container">
+        {% for comment in comments %}
+            <div class="get_comments">
+              <p class="post-meta">{{comment['user_name']}}  {{comment['createdAt']}}</p>
+              <p>{{comment['comment']}}</p>
+            </div>
+        {% endfor %}
+      </div>
+
+    </section>
+
+    <section class="contactform-area section-gap">
+      
+      <div class="container contact-div">
+        <h3 style="padding-bottom: 20px;">Comment</h3>
+      
+        <form id="contactForm" method="post" name="myemailform" action="{{ url_for('submit_comment') }}">
+      
+          <div class="mb-3">
+            <input class="form-control" id="name" type="text" placeholder="Name" name="name"/>
+          </div>
+      
+          <div class="mb-3">
+            <input class="form-control" id="emailAddress" type="email" placeholder="Email Address" name="email"/>
+          </div>
+      
+          <div class="mb-3">
+            <textarea class="form-control" id="comment" type="text" placeholder="Leave a comment" style="height: 10rem;" name="comment"></textarea>
+          </div>
+
+          <input type="hidden" id="movie_id" name="movie_id" value={{movie_id}}>
+
+          <div class="d-grid">
+            <button class="btn btn-primary btn-sm" type="submit">Submit</button>
+          </div>
+      
+        </form>
+      
+      </div>
+      </section>
+
+{% endblock %}
