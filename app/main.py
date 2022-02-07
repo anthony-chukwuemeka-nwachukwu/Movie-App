@@ -1,71 +1,22 @@
-from datetime import datetime
-from email.policy import default
-from flask import Flask, render_template, request
+from flask import jsonify, render_template, request
 import app.backend.utils as ut_port
-import os
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
+from app.backend.db import *
+from app.keys import *
+from app.backend.querydb import query_movie, get_movie_by_id
 
-
-app = Flask(__name__)
-API_KEY="5d389ede"
-
-"""DB CONFIGURATION START"""
-
-app = Flask(__name__)
-basedir = os.path.abspath(os.path.dirname(__file__))
-# basedir = '../'
-
-# Database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'db.sqlite')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# Init db
-db = SQLAlchemy(app)
-# Init ma
-ma = Marshmallow(app)
-
-# Comment Class/Model
-class Comment(db.Model):
-  comment_id = db.Column(db.Integer, primary_key=True)
-  user_name = db.Column(db.String(100), nullable=False)
-  movie_id = db.Column(db.String(100), nullable=False)
-  comment = db.Column(db.String(200))
-  user_email = db.Column(db.String(100), nullable=False)
-  createdAt = db.Column(db.DateTime)
-  updatedAt = db.Column(db.DateTime)
-
-  def __init__(self, user_name, movie_id, comment, user_email):
-    self.user_name = user_name
-    self.movie_id = movie_id
-    self.comment = comment
-    self.user_email = user_email
-    self.createdAt = datetime.now()
-    self.updatedAt = datetime.now()
-
-# Todo Schema
-class CommentSchema(ma.Schema):
-  class Meta:
-    fields = ('comment_id', 'user_name', 'movie_id', 'comment', 'user_email', 'createdAt', 'updatedAt')
-
-# Init schema
-comment_schema = CommentSchema()
-comments_schema = CommentSchema(many=True)
-
-# Execute only once
-#db.create_all()
-
-"""DB CONFIGURATION ENDS"""
+API_KEY=IMDB_API_KEY
 
 
 @app.route('/', methods=['GET'])
-def index(query=False, show="Default"):
+def index(query=False, show="Default", no=12):
     if not query:
         query=ut_port.rand_search()
+    genres=query_movie(query, no)
+        
     
-    genre_dict = ut_port.genries(query,API_KEY)
+    #genre_dict = ut_port.genries(query,API_KEY)
     
-    return render_template("home.html", genres=genre_dict, query=query, show=show)
+    return render_template("home.html", genres=genres, query=query, show=show)
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -90,11 +41,45 @@ def submit_comment():
 
 @app.route('/movie/<id>', methods=['GET'])
 def movie(id):
-    title, link, year, rating, runtime, genre, poster, desc, director = ut_port.single_movie(id,API_KEY)
+    #title, link, year, rating, runtime, genre, poster, desc, director = ut_port.single_movie(id,API_KEY)
+    genre, movie_detail = get_movie_by_id(id)
 
     comments = db.session.query(Comment).filter_by(movie_id=id).all()
-    comments = comments_schema.dump(comments)
     
-    movies = zip(title,[id],poster,desc,director,year)
-    return render_template("movie.html", movies=movies, movie_id=id, comments=comments)
+    #movies = zip(title,[id],poster,desc,director,year)
+    return render_template("movie.html", movies=movie_detail, genre=genre, movie_id=id, comments=comments)
 
+
+@app.route('/populateDB', methods=['POST'])
+def populateDB(API_KEY):
+    movie_id = db.session.query(Movie.id).all()
+    movie_id = [d['id'] for d in movie_schemas.dump(movie_id)]
+    info = ut_port.download()
+    
+    for i,id in enumerate(info):
+
+        if id not in movie_id:
+        
+            try:
+                
+                title, link, year, rating, runtime, genre, poster, desc, director = ut_port.single_movie(id,API_KEY)
+                new_movie = Movie(id, title[0], link[0], desc[0], poster[0], int(year[0]), director[0])
+                db.session.add(new_movie)
+                
+                for g in genre[0].split(','):
+                    new_genre = Genre(id, g.strip())
+                    db.session.add(new_genre)
+                db.session.commit()
+            except:
+                pass
+        if i /20 == 0:
+            print('{}/{}'.format(i,len(info)))
+    return {'response':200}
+
+
+if __name__ == "__main__":
+    # Execute only once
+    #db.drop_all()
+    #db.create_all()
+    #populateDB(API_KEY)
+    index()

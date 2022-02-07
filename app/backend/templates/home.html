@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Index{% endblock %}
+
+{% block content %}
+
+	<!-- Start recent-blog Area -->
+	<section class="recent-blog-area section-gap">
+		
+		<div class="container">
+			<div class="row" style="font-style: italic;">
+				<h5>{{show}}: {{query}}</h5>
+			</div>
+
+			{% for genre in genres %}
+
+			<div class="row" style="padding-bottom: 50px; padding-top: 50px;">
+
+				<h4>{{genre[0][-1]}} </h4>
+				
+				{% for movies in genre %}
+					<div class="single-recent-blog col-lg-2 col-md-4 col-xs-6">
+						<div class="thumb">
+							<a href="movie/{{movies[0]}}" target="_blank">
+							<img class="f-img img-fluid" src="{{movies[4]}}" alt="{{movies[1]}}" style="height: 250px; object-fit: cover; object-position: center;">
+						</a>
+						</div>
+					</div>
+				{% endfor %}
+
+			</div>
+
+			{% endfor %}
+
+		</div>
+
+	</section>
+	<!-- end recent-blog Area -->
+
+
+{% endblock %}
